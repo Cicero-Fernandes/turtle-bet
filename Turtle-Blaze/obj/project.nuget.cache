@@ -1,8 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "Pp4pfc555eg=",
+  "dgSpecHash": "g34GLEdS8j0=",
   "success": true,
   "projectFilePath": "C:\\DEV\\CSHARP_PROJECTS\\Turtle-Blaze\\Turtle-Blaze.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\Cicero\\.nuget\\packages\\microsoft.netcore.platforms\\3.1.0\\microsoft.netcore.platforms.3.1.0.nupkg.sha512",
+    "C:\\Users\\Cicero\\.nuget\\packages\\microsoft.win32.systemevents\\4.7.0\\microsoft.win32.systemevents.4.7.0.nupkg.sha512",
+    "C:\\Users\\Cicero\\.nuget\\packages\\system.drawing.common\\4.7.0\\system.drawing.common.4.7.0.nupkg.sha512",
+    "C:\\Users\\Cicero\\.nuget\\packages\\system.windows.extensions\\4.7.0\\system.windows.extensions.4.7.0.nupkg.sha512"
+  ],
   "logs": []
 }

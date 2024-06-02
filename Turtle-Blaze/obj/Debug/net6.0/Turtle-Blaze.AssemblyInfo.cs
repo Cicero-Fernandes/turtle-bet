@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Turtle-Blaze")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+226d167ffb411a5b0a4c87898558eadf3b3ab972")]
 [assembly: System.Reflection.AssemblyProductAttribute("Turtle-Blaze")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Turtle-Blaze")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
