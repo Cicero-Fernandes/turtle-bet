@@ -1,4 +1,9 @@
-﻿using System;
+﻿//Grupo
+//Cicero Eduardo Silva Fernandes
+//Leticia Regina Oliveira da Silva
+//Tierry Willis Yun de Souza
+
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
@@ -167,7 +172,7 @@ public class TartarugasNinjas
     public static void StartRace(ConcurrentBag<Bet> bets, List<TartarugasNinjas> turtle)
     {
         var raceMusic = new Action(RaceMusic);
-        //Parallel.Invoke(raceMusic);
+        Parallel.Invoke(raceMusic);
         ResetRace(bets, turtle);
         int trackSize = 100;
         bool fineshedRace = false;
@@ -324,7 +329,7 @@ public class Bet
         Console.WriteLine("\n\n\n\nThe winner of the race is:");
         Console.WriteLine($"\nName: {ranking[0].Name}\nWeight: {ranking[0].Weight}\nColor: {ranking[0].Color}\nLength: {ranking[0].Length}\n");
         var winnerMusic = new Action(TartarugasNinjas.WinnerMusic);
-        //Parallel.Invoke(winnerMusic);
+        Parallel.Invoke(winnerMusic);
 
         Console.WriteLine("\tFull Ranking:");
         foreach (TartarugasNinjas turtle in ranking)
@@ -366,7 +371,7 @@ class Program
     static void Main(string[] args)
     {
         var menuMusic = new Action(TartarugasNinjas.MenuMusic);
-        //Parallel.Invoke(menuMusic);
+        Parallel.Invoke(menuMusic);
 
         List<TartarugasNinjas> turtles = new List<TartarugasNinjas>();
         ConcurrentBag<Bet> bets = new ConcurrentBag<Bet>();
