@@ -123,8 +123,9 @@ public class TartarugasNinjas
         }
     }
 
-    public static void ResetRace(List<TartarugasNinjas> turtles)
+    public static void ResetRace(ConcurrentBag<Bet> bets, List<TartarugasNinjas> turtles)
     {
+        bets.Clear();
         Random random = new Random();
         Parallel.ForEach(turtles, turtle =>
         {
@@ -147,7 +148,7 @@ public class TartarugasNinjas
             // Corrigindo o cálculo do comprimento da string
             int filledLength = Math.Max(0, Math.Min(trackSize - 1, turtle.Position)); //Comprimento preenchido
             int emptyLength = Math.Max(0, trackSize - filledLength - 2); // -2 para considerar os caracteres '|'  Comprimento vazio
-            Console.Write("|" + new string('-', filledLength) + turtle.Symbol + new string(' ', emptyLength) + "| " + " (" + turtle.Name + " walked " + turtle.Position + "m" + ")" + " --Thread nº " + Thread.CurrentThread.ManagedThreadId + "--");
+            Console.Write("|" + new string('-', filledLength) + turtle.Symbol + new string(' ', emptyLength) + "| " + " (" + turtle.Name + " " + turtle.Position + "m" + ")" + " <T nº " + Thread.CurrentThread.ManagedThreadId + ">");
             Console.ResetColor();
         }
     }
@@ -163,23 +164,20 @@ public class TartarugasNinjas
         //Console.ReadKey();
     }
 
-    public static void StartRace(List<TartarugasNinjas> turtle)
+    public static void StartRace(ConcurrentBag<Bet> bets, List<TartarugasNinjas> turtle)
     {
-        TouchMusics("Corrida.wav");
-        ResetRace(turtle);
+        var raceMusic = new Action(RaceMusic);
+        //Parallel.Invoke(raceMusic);
+        ResetRace(bets, turtle);
         int trackSize = 100;
-        TartarugasNinjas winner = null;
-
+        bool fineshedRace = false;
+        List<TartarugasNinjas> ranking = new List<TartarugasNinjas>();
         List<Thread> threads = new List<Thread>();
         // Iniciando a corrida para cada tartaruga
         for (int i = 0; i < turtle.Count; i++)
         {
-            // Calculando a linha onde a tartaruga será desenhada (começando da linha 2)
-            int line = i + 2;
-
-            // Criando uma cópia local da variável tartaruga para evitar o problema de closure
-            TartarugasNinjas turtlee = turtle[i];
-            Thread thread = new Thread(() => turtlee.ToMove(trackSize, line));
+            int index = i; // Crie uma cópia local de 'i'
+            Thread thread = new Thread(() => turtle[index].ToMove(trackSize, index + 2));
             threads.Add(thread);
             thread.Start();
         }
@@ -191,30 +189,64 @@ public class TartarugasNinjas
 
         foreach (TartarugasNinjas turtlee in turtle)
         {
-            if (turtlee.Position >= trackSize && (winner == null || turtlee.RestTime < winner.RestTime))
+            if (turtlee.Position >= trackSize)
             {
-                winner = turtlee;
+                ranking.Add(turtlee);
+                ranking.Sort((a, b) => a.RestTime.CompareTo(b.RestTime));
             }
+            if (ranking.Count() == turtle.Count())
+            {
+                fineshedRace = true;
+            }
+
         }
 
-        if (winner != null)
+        if (fineshedRace == true)
         {
-            Console.WriteLine("\n\n\n\n\nThe winner of the race is:");
-            Console.WriteLine($"\nName: {winner.Name}\nWeight: {winner.Weight}\nColor: {winner.Color}\nLength: {winner.Length}\n");
-            TouchMusics("Vitoria.wav");
+            Bet.bettingResult(bets, ranking);
         }
-        Console.WriteLine("Press any key to continue.");
+        Console.WriteLine("\nPress any key to continue.");
         Console.ReadKey();
     }
 
-    public static void TouchMusics(string fileName)
+    public static void RaceMusic()
     {
         string dirAtual = Environment.CurrentDirectory;
         string dirMusic = dirAtual + @"\music\";
         try
         {
-            System.Media.SoundPlayer player = new System.Media.SoundPlayer(dirMusic + fileName);
-            //player.Play();
+            System.Media.SoundPlayer player = new System.Media.SoundPlayer(dirMusic + "Corrida.wav");
+            player.Play();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred when trying to play the audio file: " + ex.Message);
+        }
+    }
+
+    public static void MenuMusic()
+    {
+        string dirAtual = Environment.CurrentDirectory;
+        string dirMusic = dirAtual + @"\music\";
+        try
+        {
+            System.Media.SoundPlayer player = new System.Media.SoundPlayer(dirMusic + "Menuu.wav");
+            player.Play();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred when trying to play the audio file: " + ex.Message);
+        }
+    }
+
+    public static void WinnerMusic()
+    {
+        string dirAtual = Environment.CurrentDirectory;
+        string dirMusic = dirAtual + @"\music\";
+        try
+        {
+            System.Media.SoundPlayer player = new System.Media.SoundPlayer(dirMusic + "Vitoria.wav");
+            player.Play();
         }
         catch (Exception ex)
         {
@@ -226,14 +258,14 @@ public class TartarugasNinjas
 public class Bet
 {
     private string Better { get; set; }
-    private int ChosenTurtleIndex { get; set; }
-    private int BetAmount { get; set; }
+    private TartarugasNinjas ChosenTurtle { get; set; }
+    private double BetAmount { get; set; }
 
     //Metodo apostar que será chamado na main
-    public Bet(string better, int chosenTurtleIndex, int betAmount)
+    public Bet(string better, TartarugasNinjas chosenTurtle, double betAmount)
     {
         Better = better;
-        ChosenTurtleIndex = chosenTurtleIndex;
+        ChosenTurtle = chosenTurtle;
         BetAmount = betAmount;
     }
 
@@ -254,12 +286,16 @@ public class Bet
         {
             Console.Write("Invalid value! Enter a valid number: ");
         }
-        bets.Add(new Bet(better, chosenTurtleIndex, betAmount));
         turtles[chosenTurtleIndex].TotalBets += betAmount;
+        bets.Add(new Bet(better, turtles[chosenTurtleIndex], Convert.ToDouble(betAmount)));
         Console.WriteLine("\nBet registered successfully!\n");
 
-        Console.WriteLine("\nPress any key to return to the menu.");
-        Console.ReadKey();
+        Console.WriteLine("Do you want to register a new Bet? \n1 - Yes\n2 - No");
+        int.TryParse(Console.ReadLine(), out int op);
+        if (op == 1)
+        {
+            toBet(bets, turtles);
+        }
     }
 
     public static void betReport(ConcurrentBag<Bet> bets, List<TartarugasNinjas> turtles)
@@ -270,7 +306,7 @@ public class Bet
         Console.WriteLine("Individual Bets:\n");
         foreach (Bet bet in bets)
         {
-            Console.WriteLine($"Better: {bet.Better}, Turtle: {turtles[bet.ChosenTurtleIndex].Name}, Amount: {bet.BetAmount}");
+            Console.WriteLine($"Better: {bet.Better}, Turtle: {bet.ChosenTurtle.Name}, Amount: {bet.BetAmount}");
         }
 
         Console.WriteLine("\nTotal Bets on Each Turtle:\n");
@@ -283,13 +319,54 @@ public class Bet
         Console.ReadKey();
     }
 
+    public static void bettingResult(ConcurrentBag<Bet> bets, List<TartarugasNinjas> ranking)
+    {
+        Console.WriteLine("\n\n\n\nThe winner of the race is:");
+        Console.WriteLine($"\nName: {ranking[0].Name}\nWeight: {ranking[0].Weight}\nColor: {ranking[0].Color}\nLength: {ranking[0].Length}\n");
+        var winnerMusic = new Action(TartarugasNinjas.WinnerMusic);
+        //Parallel.Invoke(winnerMusic);
+
+        Console.WriteLine("\tFull Ranking:");
+        foreach (TartarugasNinjas turtle in ranking)
+        {
+            Console.WriteLine($"\n{ranking.IndexOf(turtle) + 1}. Name: {turtle.Name}, Weight: {turtle.Weight}, Color: {turtle.Color}, Length: {turtle.Length}");
+        }
+
+        Console.WriteLine("\n\tBet Result:");
+
+        Parallel.ForEach(bets, bet =>
+        {
+            if (bet.ChosenTurtle == ranking[0])
+            {
+                bet.BetAmount *= 2;
+                Console.WriteLine($"\n{bet.Better}, bet on first place and won: {bet.BetAmount}");
+            }
+            else if (bet.ChosenTurtle == ranking[1])
+            {
+                bet.BetAmount *= 1.5;
+                Console.WriteLine($"\n{bet.Better}, bet on second place and won: {bet.BetAmount}");
+            }
+            else if (bet.ChosenTurtle == ranking[2])
+            {
+                bet.BetAmount *= 0.5;
+                Console.WriteLine($"\n{bet.Better}, bet on third place and won: {bet.BetAmount}");
+            }
+            else
+            {
+                Console.WriteLine($"\n{bet.Better}, made a bad bet and lost: {bet.BetAmount}");
+            }
+        }
+        );
+    }
+
 }
 
 class Program
 {
     static void Main(string[] args)
     {
-        TartarugasNinjas.TouchMusics("Menuu.wav");
+        var menuMusic = new Action(TartarugasNinjas.MenuMusic);
+        //Parallel.Invoke(menuMusic);
 
         List<TartarugasNinjas> turtles = new List<TartarugasNinjas>();
         ConcurrentBag<Bet> bets = new ConcurrentBag<Bet>();
@@ -298,7 +375,7 @@ class Program
         {
             Console.Clear();
             Console.WriteLine("--WELCOME TO THE TURTLE RACE!--");
-            Console.WriteLine("\n1 - Register your Ninja Turtle \n2 - View Ninja Turtle data \n3 - Place your bet \n4 - Start the race \n5 - Credits \n6 - Exit");
+            Console.WriteLine("\n1 - Register your Ninja Turtle \n2 - View Ninja Turtle data \n3 - Start the race \n4 - Credits \n5 - Exit");
             Console.Write("\nChoose one of the options above: ");
             int.TryParse(Console.ReadLine(), out menuOption);
 
@@ -315,24 +392,14 @@ class Program
                     Console.ReadKey();
                     break;
                 case 3:
-                    if (turtles.Count != 0)
-                    {
-                        Bet.toBet(bets, turtles);
-                    }
-                    else
-                    {
-                        Console.WriteLine("\nBefore betting you need to create the turtles");
-                        Thread.Sleep(1000);
-                    }
-
-                    break;
-                case 4:
                     if (turtles.Count > 0)
                     {
+                        Bet.toBet(bets, turtles);
+                        Console.Clear();
                         Bet.betReport(bets, turtles);
                         Console.Clear();
                         Console.WriteLine("--THE START HAS BEEN GIVEN!!--\n");
-                        TartarugasNinjas.StartRace(turtles);
+                        TartarugasNinjas.StartRace(bets, turtles);
                     }
                     else
                     {
@@ -340,10 +407,10 @@ class Program
                         Console.ReadKey();
                     }
                     break;
-                case 5:
+                case 4:
                     Credits();
                     break;
-                case 6:
+                case 5:
                     Console.WriteLine("\nLeaving...");
                     Thread.Sleep(1000);
                     break;
@@ -351,7 +418,7 @@ class Program
                     Console.WriteLine("Invalid option!");
                     break;
             }
-        } while (menuOption != 6);
+        } while (menuOption != 5);
     }
 
     static void RegisterTurtle(List<TartarugasNinjas> turtles)
@@ -420,22 +487,11 @@ class Program
         turtles.Add(new TartarugasNinjas(name, weight, color, length));
         Console.WriteLine("Turtle registered successfully!\n");
 
-        if (turtles.Count < 5)
+        Console.WriteLine("Do you want to register another Turtle? \n1 - Yes\n2 - No");
+        int.TryParse(Console.ReadLine(), out int op);
+        if (op == 1)
         {
-            Console.WriteLine("Do you want to register another Turtle? \n1 - Yes\n2 - No");
-            int.TryParse(Console.ReadLine(), out int op);
-            if (op == 1)
-            {
-                RegisterTurtle(turtles);
-            }
-        }
-
-        if (turtles.Count > 5)
-        {
-            Console.Clear();
-            Console.WriteLine("\nExceeded the limit of competitors!\n");
-            Console.WriteLine("Press any key to return to the menu.");
-            Console.ReadKey();
+            RegisterTurtle(turtles);
         }
     }
 
