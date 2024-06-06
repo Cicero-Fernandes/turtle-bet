@@ -187,7 +187,6 @@ public class TartarugasNinjas
             if (turtlee.Position >= trackSize)
             {
                 ranking.Add(turtlee);
-                ranking.Sort((a, b) => a.RestTime.CompareTo(b.RestTime));
             }
             if (ranking.Count() == turtle.Count())
             {
